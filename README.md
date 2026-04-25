@@ -74,18 +74,18 @@ bayesian_churn/
 ├── data/
 │   └── WA_Fn-UseC_-Telco-Customer-Churn.csv
 ├── notebooks/
-│   ├── 01_eda.py               # Churn rates by segment, feature correlations
-│   ├── 02_bayesian_model.py    # Prior elicitation, PyMC model, MCMC sampling
-│   ├── 03_inference.py         # Convergence diagnostics, posterior plots, uncertainty
-│   └── 04_comparison.py        # Bayesian vs frequentist on AUC, Brier, calibration
+│   ├── 01_eda.ipynb                # Churn rates by segment, feature correlations
+│   ├── 02_bayesian_model.ipynb     # Prior elicitation, PyMC model, MCMC sampling (GPU)
+│   ├── 03_inference.ipynb          # Convergence diagnostics, posterior plots, uncertainty
+│   └── 04_comparison.ipynb         # Bayesian vs frequentist on AUC, Brier, calibration
 ├── outputs/
-│   ├── trace.nc                # ArviZ InferenceData (saved posterior)
-│   └── customer_uncertainty.csv # Per-customer risk + uncertainty scores
+│   ├── trace.nc                    # ArviZ InferenceData (saved posterior)
+│   └── customer_uncertainty.csv    # Per-customer risk + uncertainty scores
 └── assets/
-    ├── posterior_forest.png    # Coefficient plot with 94% HDI
-    ├── trace_plots.png         # Chain mixing diagnostics
-    ├── posterior_analysis.png  # Risk × uncertainty segmentation
-    └── comparison.png          # Frequentist vs Bayesian comparison
+    ├── posterior_forest.png        # Coefficient plot with 94% HDI
+    ├── trace_plots.png             # Chain mixing diagnostics
+    ├── posterior_analysis.png      # Risk × uncertainty segmentation
+    └── comparison.png              # Frequentist vs Bayesian comparison
 ```
 
 ---
@@ -108,14 +108,57 @@ bayesian_churn/
 
 ## Setup
 
+### 1. Clone and create virtual environment
+
 ```bash
-pip install pymc arviz scikit-learn pandas matplotlib pytensor
-python notebooks/02_bayesian_model.py   # ~4 min on CPU
-python notebooks/03_inference.py
-python notebooks/04_comparison.py
+git clone <your-repo-url>
+cd bayesian_churn
+python3 -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
 ```
 
-Tested with PyMC 5.28, ArviZ 0.21, Python 3.12.
+### 2. Install dependencies
+
+```bash
+pip install pymc arviz scikit-learn pandas matplotlib pytensor numpyro blackjax
+```
+
+**GPU acceleration (NVIDIA only):** GPU sampling is supported via NumpyPro + JAX and runs ~5–10x faster than CPU. Install the CUDA-enabled JAX build after the above:
+
+```bash
+pip install "jax[cuda12]==0.4.38" "jaxlib==0.4.38"
+```
+
+Check your CUDA version first with `nvidia-smi` — use `cuda12` for CUDA 12.x and above.
+
+### 3. Run notebooks in order
+
+```bash
+jupyter notebook
+```
+
+Open and run notebooks in order: `01_eda` → `02_bayesian_model` → `03_inference` → `04_comparison`.
+
+> **Note:** `02_bayesian_model.ipynb` must be run before `03_inference.ipynb` and `04_comparison.ipynb` — it generates `outputs/trace.nc` which the later notebooks depend on.
+
+### Sampling time
+
+| Hardware | Backend | Time (2000 draws, 4 chains) |
+|---|---|---|
+| NVIDIA GPU (CUDA) | NumpyPro/JAX | ~40 sec |
+| CPU | NumpyPro/JAX | ~4 min |
+
+### Tested with
+
+```
+Python      3.12.3
+PyMC        5.28.4
+ArviZ       0.21.0
+JAX         0.4.38
+JAXlib      0.4.38
+NumpyPro    0.16.1
+scikit-learn 1.5.0
+```
 
 ---
 
